@@ -1,0 +1,50 @@
+install.packages("googlesheets")
+install.packages(dplyr)
+library(googlesheets)
+suppressMessages(library(dplyr))
+(my_sheets <- gs_ls())
+
+#gs_ = all functions in the package.
+#gs_ws_ = all functions that operate on worksheets or tabs within a spreadsheet.
+#gd_ = something to do with Google Drive, usually has a gs_ synonym, might one day migrate to a Drive client.
+
+my_sheets %>% glimpse()
+MA <- gs_title("Copy of Manual Abstraction Tableau-ready Data")
+gs_ws_ls(MA)
+MA
+TPL <- MA %>%
+  gs_read(ws = "JeevesLung")
+TPL
+str(TPL)
+head(TPL)
+
+library(survminer)
+require("survival")
+
+#change column names of data frame
+colnames(TPL) <- c("Customer", "Patient", "ClinicalStage", "CancerType", "Histology", "FirstLineTreatment", 
+                   "SurvivalDays", "SurvivalMonths", "Status", "CensorLine", "CensorTickmarks", "Index", "Number of Patients" )
+
+TPL
+
+fitL <- survfit(Surv(SurvivalDays,CensorLine)~  1, data = TPL)
+NSCLC <- ggsurvplot(fitL, 
+                    size = 1,
+                    censor.shape="|", 
+                    censor.size=3,
+                    color="Blue", 
+                    conf.int = TRUE, 
+                    pval = TRUE,
+                    xlim=c(0,4000),
+                    xlab="Days since Diagnosis",
+                    risk.table = TRUE, 
+                    risk.table.y.text.com = T,
+                    risk.table.y.text = FALSE,
+                    risk.table.height=.25,
+                    ncensor.plot = TRUE,     
+                    ncensor.plot.height = 0.25,
+                    #conf.int.style = "step",  # customize style of confidence intervals
+                    surv.median.line = "hv",
+                    ggtheme = theme_light()
+)
+NSCLC
