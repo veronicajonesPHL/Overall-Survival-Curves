@@ -1,0 +1,85 @@
+install.packages("googlesheets")
+library(googlesheets)
+suppressMessages(library(dplyr))
+(my_sheets <- gs_ls())
+
+#gs_ = all functions in the package.
+#gs_ws_ = all functions that operate on worksheets or tabs within a spreadsheet.
+#gd_ = something to do with Google Drive, usually has a gs_ synonym, might one day migrate to a Drive client.
+
+my_sheets %>% glimpse()
+MA <- gs_title("Manual Abstraction Tableau-ready Data")
+gs_ws_ls(MA)
+MA
+TP2 <- MA %>%
+gs_read(ws = "tableau-patients2")
+TP2
+str(TP2)
+head(TP2)
+
+library(survminer)
+require("survival")
+
+#change column names of data frame
+colnames(TP2) <- c("Patient", "Customer", "CancerType", "ClinicalStage", "Histology", "FirstLineTreatment", 
+                   "DoDiag", "DoD", "DoLC", "SurvivalDays", "SurvivalMonths", "Status", "CensorLine", "CensorTickmarks", "Index", "Number of Patients" )
+
+TP2
+
+fit <- survfit(Surv(SurvivalDays,CensorLine)~  1, data = TP2)
+fit
+#class(TP2$Patient) = "factor"
+#reliability = psych(alpha(fit))
+#?psych()
+
+##use if error- Error in grDevices::col2rgb(colour, TRUE) : invalid color name 'strata'
+
+All <- ggsurvplot(fit, 
+                  size = 1,
+                  censor.shape="|", 
+                  censor.size=3,
+                  color ="Blue", 
+                  conf.int = TRUE, 
+                  pval = TRUE,
+                  xlim=c(0,6000),
+                  xlab="Days since Diagnosis",
+                  risk.table = TRUE, 
+                  risk.table.y.text.com = T,
+                  risk.table.y.text = FALSE,
+                  risk.table.height=.25,
+                  ncensor.plot = TRUE,     
+                  ncensor.plot.height = 0.25,
+                  #conf.int.style = "step",  # customize style of confidence intervals
+                  surv.median.line = "hv",
+                  ggtheme = theme_light()
+)
+All
+
+
+Lung <- filter(TP2, CancerType=="Lung",ClinicalStage=="IV")
+#dplyr filter function, to include two values, use %in% 
+Lung
+
+fit2 <- survfit(Surv(SurvivalDays,CensorLine)~  1, data = Lung)
+NSCLC <- ggsurvplot(fit2, 
+                    size = 1,
+                    censor.shape="|", 
+                    censor.size=3,
+                    color="Blue", 
+                    conf.int = TRUE, 
+                    pval = TRUE,
+                    xlim=c(0,4000),
+                    xlab="Days since Diagnosis",
+                    risk.table = TRUE, 
+                    risk.table.y.text.com = T,
+                    risk.table.y.text = FALSE,
+                    risk.table.height=.25,
+                    ncensor.plot = TRUE,     
+                    ncensor.plot.height = 0.25,
+                    #conf.int.style = "step",  # customize style of confidence intervals
+                    surv.median.line = "hv",
+                    ggtheme = theme_light()
+)
+NSCLC
+
+?survfit
